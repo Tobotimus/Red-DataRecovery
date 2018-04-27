@@ -48,6 +48,7 @@ class DataRecovery:
             The bot who ran the slot machines. Defaults to me.
 
         """
+        first: discord.Message = await ctx.send('*Recovering economy data, please standby...*')
         channel: discord.TextChannel = ctx.channel
         members_recovered: Set[discord.Member] = set()
         pattern = re.compile(r'\d+ → (\d+)!')
@@ -55,24 +56,26 @@ class DataRecovery:
             bot_user: discord.Member = ctx.guild.me
         # noinspection PyUnusedLocal
         message: discord.Message
-        async for message in channel.history(limit=num_messages):
-            if message.author != bot_user:
-                continue
-            if not message.mentions:
-                continue
-            gambler: discord.Member = message.mentions[0]
-            if gambler in members_recovered:
-                continue
-            content: str = message.content
-            last_line = content.split('\n')[-1]
-            balance_str = pattern.search(last_line)
-            if balance_str and message.mentions:
-                balance = int(balance_str.group(1))
-                await bank.set_balance(gambler, balance)
-                LOGGER.debug(f'Set {gambler}\'s balance to {balance}')
-                members_recovered.add(gambler)
-                if len(members_recovered) >= num_accounts:
-                    break
+        async with ctx.typing():
+            async for message in channel.history(limit=num_messages):
+                if message.author != bot_user:
+                    continue
+                if not message.mentions:
+                    continue
+                gambler: discord.Member = message.mentions[0]
+                if gambler in members_recovered:
+                    continue
+                content: str = message.content
+                last_line = content.split('\n')[-1]
+                balance_str = pattern.search(last_line)
+                if balance_str and message.mentions:
+                    balance = int(balance_str.group(1))
+                    await bank.set_balance(gambler, balance)
+                    LOGGER.debug(f'Set {gambler}\'s balance to {balance}')
+                    members_recovered.add(gambler)
+                    if len(members_recovered) >= num_accounts:
+                        break
         LOGGER.info(f'Performed data recovery in {channel}, and set the balance of '
                     f'{len(members_recovered)} members.')
-        await ctx.send(f'Done. Set the balance for {len(members_recovered)} members.')
+        await first.delete()
+        await ctx.send(f'Done. Set the balance of {len(members_recovered)} members.')
