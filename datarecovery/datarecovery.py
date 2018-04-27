@@ -52,7 +52,7 @@ class DataRecovery:
         first: discord.Message = await ctx.send('*Recovering economy data, please standby...*')
         channel: discord.TextChannel = ctx.channel
         members_recovered: Set[discord.Member] = set()
-        payday_re = re.compile(r'<@!?\d+> Here, take some credits. Enjoy! (\+(\d+) credits!)')
+        payday_re = re.compile(r'<@!?\d+> Here, take some credits. Enjoy! \(\+(\d+) credits!\)')
         slot_re = re.compile(r'\d+ → (\d+)!')
         balance_re = re.compile(r'<@!?\d+> Your balance is: (\d+)')
         cumulative_balances: DefaultDict[discord.Member, int] = defaultdict(lambda: 0)
