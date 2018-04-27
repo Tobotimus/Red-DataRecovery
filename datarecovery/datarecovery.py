@@ -3,6 +3,7 @@
 import re
 import logging
 from collections import defaultdict
+from datetime import datetime
 from typing import Set, DefaultDict
 
 import discord
@@ -60,6 +61,7 @@ class DataRecovery:
             bot_user: discord.Member = ctx.guild.me
         # noinspection PyUnusedLocal
         message: discord.Message
+        last_timestamp: datetime
         async with ctx.typing():
             async for message in channel.history(limit=num_messages):
                 if message.author != bot_user:
@@ -79,6 +81,7 @@ class DataRecovery:
                     cumulative_balances[gambler] += amount_paid
                     LOGGER.debug(f'Added {amount_paid} to {gambler}\'s cumulative balance '
                                  f'(Now {cumulative_balances[gambler]}).')
+                    last_timestamp = message.created_at
                     continue
 
                 balance_match = balance_re.search(content)
@@ -93,17 +96,21 @@ class DataRecovery:
                     del cumulative_balances[gambler]
                     LOGGER.debug(f'Set {gambler}\'s balance to {balance}')
                     members_recovered.add(gambler)
+                    last_timestamp = message.created_at
                     if len(members_recovered) >= num_accounts:
                         break
+        last_timestamp = last_timestamp.strftime('%Y-%m-%d')
         LOGGER.debug('Now setting cumulative balances...')
         for gambler, balance in cumulative_balances.items():
             await bank.set_balance(gambler, balance)
             LOGGER.debug(f'Set {gambler}\'s balance to {balance}')
 
         LOGGER.info(f'Performed data recovery in {channel}, and set the balance of '
-                    f'{len(members_recovered)} members.')
+                    f'{len(members_recovered)} members. Data was recovered from messages '
+                    f'dating back to {last_timestamp}.')
         await first.delete()
-        await ctx.send(f'Done. Set the balance of {len(members_recovered)} members.')
+        await ctx.send(f'Done. Set the balance of {len(members_recovered)} members. '
+                       f'Data was recovered from messages dating back to {last_timestamp}.')
 
 
 '''Copyright (c) 2017, 2018 Tobotimus
