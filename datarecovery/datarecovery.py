@@ -68,11 +68,11 @@ class DataRecovery:
             balance_str = pattern.search(last_line)
             if balance_str and message.mentions:
                 balance = int(balance_str.group(1))
-                bank.set_balance(gambler, balance)
+                await bank.set_balance(gambler, balance)
                 LOGGER.debug(f'Set {gambler}\'s balance to {balance}')
                 members_recovered.add(gambler)
                 if len(members_recovered) >= num_accounts:
                     break
-        LOGGER.info(f'Performed data recovery in {channel}, and set the balance of'
+        LOGGER.info(f'Performed data recovery in {channel}, and set the balance of '
                     f'{len(members_recovered)} members.')
         await ctx.send(f'Done. Set the balance for {len(members_recovered)} members.')
